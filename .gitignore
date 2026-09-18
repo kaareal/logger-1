@@ -3,3 +3,4 @@ types
 .vscode
 .claude
 yarn-error.log
+node_modules

@@ -29,17 +29,6 @@
     "url": "https://github.com/bedrockio/logger"
   },
   "dependencies": {
-    "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.4.1",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/core": "^1.29.0",
-    "@opentelemetry/instrumentation": "^0.56.0",
-    "@opentelemetry/instrumentation-http": "^0.56.0",
-    "@opentelemetry/instrumentation-koa": "^0.46.0",
-    "@opentelemetry/instrumentation-mongoose": "^0.45.0",
-    "@opentelemetry/resources": "^1.29.0",
-    "@opentelemetry/sdk-trace-base": "^1.29.0",
-    "@opentelemetry/sdk-trace-node": "^1.29.0",
-    "@opentelemetry/semantic-conventions": "^1.28.0",
     "bytes": "^3.1.2",
     "kleur": "^4.1.5",
     "stdout-stream": "^2.0.0"

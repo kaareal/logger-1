@@ -11,39 +11,20 @@ import {
 } from './logger';
 import { isTTY, isCloudEnv } from './utils/env';
 import middleware from './middleware';
-import {
-  useGoogleCloudTracing,
-  getTracePayload,
-  setCloudConfig,
-} from './tracing';
-
-const DEFAULT_OPTIONS = {
-  logging: true,
-  tracing: {
-    ignoreIncomingPaths: ['/', /^\/1\/status\/*/],
-  },
-};
+import { getRequestContext } from './utils/request-context';
 
 /**
  * @param {Object} [options]
  * @param {boolean} [options.logging=true]
- * @param {boolean|Object} [options.tracing=true]
+ * @param {() => import('./utils/request-context').SpanContext|undefined} [options.getSpanContext]
+ *   Returns the active span, e.g. from OpenTelemetry. Takes precedence over
+ *   trace headers read by the middleware.
  */
-function setupGoogleCloud(options) {
-  options = {
-    ...DEFAULT_OPTIONS,
-    ...options,
-  };
-
-  if (options.logging) {
+function setupGoogleCloud(options = {}) {
+  const { logging = true, getSpanContext } = options;
+  if (logging) {
     useGoogleCloud({
-      getTracePayload,
-    });
-  }
-
-  if (options.tracing) {
-    useGoogleCloudTracing({
-      ignoreIncomingPaths: options.tracing?.ignoreIncomingPaths,
+      getSpanContext,
     });
   }
 }
@@ -65,8 +46,8 @@ export {
   useConsole,
   useFormatted,
   useGoogleCloud,
-  setCloudConfig,
   setupGoogleCloud,
+  getRequestContext,
 };
 
 export default {
@@ -80,6 +61,6 @@ export default {
   useConsole,
   useFormatted,
   useGoogleCloud,
-  setCloudConfig,
   setupGoogleCloud,
+  getRequestContext,
 };

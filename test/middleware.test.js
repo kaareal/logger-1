@@ -1,5 +1,5 @@
 import { mockConsole, unmockConsole, getMessages } from './mocks/console';
-import { useFormatted, useGoogleCloud } from '../src/logger';
+import { info, useFormatted, useGoogleCloud } from '../src/logger';
 import middleware from '../src/middleware';
 
 jest.useFakeTimers().setSystemTime(new Date('2020-01-01'));
@@ -29,6 +29,7 @@ function createContext(obj) {
     request: {
       ...obj.request,
       headers: {
+        'x-request-id': 'request-id',
         ...obj.request?.headers,
       },
     },
@@ -195,6 +196,7 @@ describe('google cloud middleware', () => {
     expect(JSON.parse(message)).toEqual({
       message: 'POST /foo 2KB - 100ms',
       severity: 'INFO',
+      requestId: 'request-id',
       httpRequest: {
         latency: '0.1s',
         requestMethod: 'POST',
@@ -231,6 +233,7 @@ describe('google cloud middleware', () => {
       message: 'POST /foo 2KB - 100ms',
       severity: 'INFO',
       userId: 'fake-id',
+      requestId: 'request-id',
       httpRequest: {
         latency: '0.1s',
         requestMethod: 'POST',
@@ -271,6 +274,77 @@ describe('google cloud middleware', () => {
     middleware()(ctx, () => {});
     ctx.res.end();
     expect(getMessages()).toEqual([]);
+  });
+
+  describe('request context', () => {
+    const TRACE_ID = '4bf92f3577b34da6a3ce929d0e0e4736';
+
+    function createTracedContext() {
+      return createContext({
+        url: '/foo',
+        method: 'GET',
+        status: 200,
+        request: {
+          headers: {
+            traceparent: `00-${TRACE_ID}-00f067aa0ba902b7-01`,
+          },
+        },
+      });
+    }
+
+    const TRACE_FIELDS = {
+      requestId: 'request-id',
+      'logging.googleapis.com/trace': TRACE_ID,
+    };
+
+    it('should add trace fields to the request log', () => {
+      const ctx = createTracedContext();
+      middleware()(ctx, () => {});
+      ctx.res.end();
+      const [, message] = getMessages()[0];
+      const parsed = JSON.parse(message);
+      expect(parsed).toMatchObject(TRACE_FIELDS);
+      expect(parsed).not.toHaveProperty('logging.googleapis.com/spanId');
+    });
+
+    it('should add trace fields to logs inside async handlers', async () => {
+      const ctx = createTracedContext();
+      await middleware()(ctx, async () => {
+        await Promise.resolve();
+        info('inside');
+      });
+      const [, message] = getMessages()[0];
+      expect(JSON.parse(message)).toMatchObject({
+        message: 'inside',
+        ...TRACE_FIELDS,
+      });
+    });
+
+    it('should read the X-Cloud-Trace-Context header from Google load balancers', () => {
+      const ctx = createContext({
+        url: '/foo',
+        method: 'GET',
+        status: 200,
+        request: {
+          headers: {
+            'x-cloud-trace-context': `${TRACE_ID}/12345;o=1`,
+          },
+        },
+      });
+      middleware()(ctx, () => {});
+      ctx.res.end();
+      const [, message] = getMessages()[0];
+      expect(JSON.parse(message)).toMatchObject(TRACE_FIELDS);
+    });
+
+    it('should not add fields to logs outside a request', () => {
+      info('outside');
+      const [, message] = getMessages()[0];
+      expect(JSON.parse(message)).toEqual({
+        message: 'outside',
+        severity: 'INFO',
+      });
+    });
   });
 
   describe('custom log level', () => {

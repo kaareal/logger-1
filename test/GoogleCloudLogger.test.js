@@ -6,6 +6,7 @@ import {
   getParsedMessages,
 } from './mocks/console';
 import GoogleCloudLogger from '../src/loggers/GoogleCloudLogger';
+import { runWithRequestContext } from '../src/utils/request-context';
 
 const logger = new GoogleCloudLogger();
 
@@ -540,6 +541,89 @@ describe('contexts', () => {
           context: {
             bar: 'bar',
           },
+        },
+      ],
+    ]);
+  });
+});
+
+describe('request context', () => {
+  const TRACE_ID = '4bf92f3577b34da6a3ce929d0e0e4736';
+
+  it('should add request id and trace inside a request', async () => {
+    runWithRequestContext({ requestId: 'abc', traceId: TRACE_ID }, () => {
+      logger.info('msg');
+    });
+    expect(getParsedMessages()).toEqual([
+      [
+        'log',
+        {
+          severity: 'INFO',
+          message: 'msg',
+          requestId: 'abc',
+          'logging.googleapis.com/trace': TRACE_ID,
+        },
+      ],
+    ]);
+  });
+
+  it('should fall back to the request trace when there is no active span', async () => {
+    const otelLogger = new GoogleCloudLogger({
+      getSpanContext: () => undefined,
+    });
+    runWithRequestContext({ requestId: 'abc', traceId: TRACE_ID }, () => {
+      otelLogger.info('msg');
+    });
+    expect(getParsedMessages()).toEqual([
+      [
+        'log',
+        {
+          severity: 'INFO',
+          message: 'msg',
+          requestId: 'abc',
+          'logging.googleapis.com/trace': TRACE_ID,
+        },
+      ],
+    ]);
+  });
+
+  it('should add only the request id without a trace', async () => {
+    runWithRequestContext({ requestId: 'abc' }, () => {
+      logger.info('msg');
+    });
+    expect(getParsedMessages()).toEqual([
+      [
+        'log',
+        {
+          severity: 'INFO',
+          message: 'msg',
+          requestId: 'abc',
+        },
+      ],
+    ]);
+  });
+
+  it('should use span fields from getSpanContext', async () => {
+    const otelLogger = new GoogleCloudLogger({
+      getSpanContext: () => ({
+        traceId: 'f'.repeat(32),
+        spanId: 'e'.repeat(16),
+        traceFlags: 0,
+      }),
+    });
+    runWithRequestContext({ requestId: 'abc', traceId: TRACE_ID }, () => {
+      otelLogger.info('msg');
+    });
+    expect(getParsedMessages()).toEqual([
+      [
+        'log',
+        {
+          severity: 'INFO',
+          message: 'msg',
+          requestId: 'abc',
+          'logging.googleapis.com/trace': 'f'.repeat(32),
+          'logging.googleapis.com/spanId': 'e'.repeat(16),
+          'logging.googleapis.com/trace_sampled': false,
         },
       ],
     ]);

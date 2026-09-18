@@ -1,6 +1,11 @@
 import bytes from 'bytes';
 
 import { formatRequest } from './logger';
+import {
+  bindRequestContext,
+  createRequestContext,
+  runWithRequestContext,
+} from './utils/request-context';
 
 const IGNORE_UA_REG = /^(GoogleHC|kube-probe)/;
 
@@ -10,18 +15,25 @@ const IGNORE_UA_REG = /^(GoogleHC|kube-probe)/;
 export default function middleware(options) {
   assertOptions(options);
   return (ctx, next) => {
-    if (isAllowedRequest(ctx, options)) {
-      const start = new Date();
-      ctx.res.once('finish', () => {
-        formatRequest({
-          ...getRequestInfo(ctx, options),
-          ...getRequestExtra(ctx, options),
-          // @ts-ignore
-          latency: new Date() - start,
-        });
-      });
-    }
-    return next();
+    const context = createRequestContext(ctx.request.headers);
+    return runWithRequestContext(context, () => {
+      if (isAllowedRequest(ctx, options)) {
+        const start = new Date();
+        // Event listeners run in the emitter's async context, so bind the request's.
+        ctx.res.once(
+          'finish',
+          bindRequestContext(() => {
+            formatRequest({
+              ...getRequestInfo(ctx, options),
+              ...getRequestExtra(ctx, options),
+              // @ts-ignore
+              latency: new Date() - start,
+            });
+          }),
+        );
+      }
+      return next();
+    });
   };
 }
 
