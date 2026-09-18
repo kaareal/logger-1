@@ -587,6 +587,30 @@ describe('request context', () => {
     ]);
   });
 
+  it('should ignore an all-zero span from getSpanContext', async () => {
+    const otelLogger = new GoogleCloudLogger({
+      getSpanContext: () => ({
+        traceId: '0'.repeat(32),
+        spanId: '0'.repeat(16),
+        traceFlags: 0,
+      }),
+    });
+    runWithRequestContext({ requestId: 'abc', traceId: TRACE_ID }, () => {
+      otelLogger.info('msg');
+    });
+    expect(getParsedMessages()).toEqual([
+      [
+        'log',
+        {
+          severity: 'INFO',
+          message: 'msg',
+          requestId: 'abc',
+          'logging.googleapis.com/trace': TRACE_ID,
+        },
+      ],
+    ]);
+  });
+
   it('should keep a requestId logged by the caller', async () => {
     logger.info('outside', { requestId: 'job-42' });
     runWithRequestContext({ requestId: 'abc' }, () => {

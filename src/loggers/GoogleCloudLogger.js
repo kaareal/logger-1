@@ -1,6 +1,6 @@
 import consoleAsync from '../utils/async-console';
 import { isTTY } from '../utils/env';
-import { getRequestContext } from '../utils/request-context';
+import { getRequestContext, isValidTraceId } from '../utils/request-context';
 
 import BaseLogger from './BaseLogger';
 
@@ -110,7 +110,10 @@ export default class GoogleCloudLogger extends BaseLogger {
 
   getRequestPayload() {
     const request = getRequestContext();
-    const span = this.options.getSpanContext?.();
+    let span = this.options.getSpanContext?.();
+    if (!isValidTraceId(span?.traceId)) {
+      span = undefined;
+    }
     const traceId = span?.traceId || request?.traceId;
     return {
       requestId: request?.requestId,

@@ -65,9 +65,13 @@ export function parseTraceId(headers) {
   );
 }
 
+export function isValidTraceId(traceId) {
+  return !!traceId && !INVALID_TRACE_REG.test(traceId);
+}
+
 function matchTraceId(header, reg) {
   const traceId = header?.match(reg)?.[1].toLowerCase();
-  if (traceId && !INVALID_TRACE_REG.test(traceId)) {
+  if (isValidTraceId(traceId)) {
     return traceId;
   }
 }
