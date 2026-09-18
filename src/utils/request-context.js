@@ -35,7 +35,8 @@ export function runWithRequestContext(context, fn) {
 }
 
 export function bindRequestContext(fn) {
-  return AsyncLocalStorage.bind(fn);
+  const context = storage.getStore();
+  return (...args) => storage.run(context, fn, ...args);
 }
 
 /**
