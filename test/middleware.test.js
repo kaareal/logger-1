@@ -29,7 +29,6 @@ function createContext(obj) {
     request: {
       ...obj.request,
       headers: {
-        'x-request-id': 'request-id',
         ...obj.request?.headers,
       },
     },
@@ -196,7 +195,7 @@ describe('google cloud middleware', () => {
     expect(JSON.parse(message)).toEqual({
       message: 'POST /foo 2KB - 100ms',
       severity: 'INFO',
-      requestId: 'request-id',
+      requestId: expect.any(String),
       httpRequest: {
         latency: '0.1s',
         requestMethod: 'POST',
@@ -233,7 +232,7 @@ describe('google cloud middleware', () => {
       message: 'POST /foo 2KB - 100ms',
       severity: 'INFO',
       userId: 'fake-id',
-      requestId: 'request-id',
+      requestId: expect.any(String),
       httpRequest: {
         latency: '0.1s',
         requestMethod: 'POST',
@@ -293,7 +292,7 @@ describe('google cloud middleware', () => {
     }
 
     const TRACE_FIELDS = {
-      requestId: 'request-id',
+      requestId: expect.any(String),
       'logging.googleapis.com/trace': TRACE_ID,
     };
 

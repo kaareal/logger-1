@@ -133,7 +133,7 @@ app.use(logger.middleware());
 The middleware runs each request in a context that is added to every Google
 Cloud log written while handling it:
 
-- `requestId` - The `x-request-id` header, or a generated UUID.
+- `requestId` - A UUID generated for each request.
 - `logging.googleapis.com/trace` - The trace id from the `traceparent` header,
   falling back to `X-Cloud-Trace-Context` set by Google Cloud load balancers.
   Logs Explorer groups logs of a request by it. Span ids in these headers
@@ -153,7 +153,6 @@ include.
 app.use(logger.middleware({
   getExtraFields: (ctx) => ({
     organizationId: ctx.state?.organization?.id,
-    requestId: ctx.get('x-request-id'),
   }),
 }));
 ```

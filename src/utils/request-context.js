@@ -19,7 +19,6 @@ const storage = new AsyncLocalStorage();
 const TRACEPARENT_REG = /^[\da-f]{2}-([\da-f]{32})-[\da-f]{16}-[\da-f]{2}$/i;
 const CLOUD_TRACE_REG = /^([\da-f]{32})(?:\/\d+)?(?:;o=[01])?$/i;
 const INVALID_TRACE_REG = /^0+$/;
-const REQUEST_ID_REG = /^[\w.:-]{1,128}$/;
 
 /**
  * Returns the context of the request currently handled by the middleware,
@@ -46,7 +45,7 @@ export function bindRequestContext(fn) {
  */
 export function createRequestContext(headers) {
   return {
-    requestId: parseRequestId(headers['x-request-id']) || randomUUID(),
+    requestId: randomUUID(),
     traceId: parseTraceId(headers),
   };
 }
@@ -70,12 +69,5 @@ function matchTraceId(header, reg) {
   const traceId = header?.match(reg)?.[1].toLowerCase();
   if (traceId && !INVALID_TRACE_REG.test(traceId)) {
     return traceId;
-  }
-}
-
-// The header is client controlled, so bound what reaches every log line.
-function parseRequestId(header) {
-  if (REQUEST_ID_REG.test(header)) {
-    return header;
   }
 }

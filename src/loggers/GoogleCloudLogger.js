@@ -89,7 +89,11 @@ export default class GoogleCloudLogger extends BaseLogger {
   }
 
   emitPayload(payload) {
-    Object.assign(payload, this.getRequestPayload());
+    // Fields the caller logged take precedence over request fields.
+    payload = {
+      ...this.getRequestPayload(),
+      ...payload,
+    };
     let str;
     try {
       str = JSON.stringify(payload);

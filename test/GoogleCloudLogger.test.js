@@ -587,6 +587,17 @@ describe('request context', () => {
     ]);
   });
 
+  it('should keep a requestId logged by the caller', async () => {
+    logger.info('outside', { requestId: 'job-42' });
+    runWithRequestContext({ requestId: 'abc' }, () => {
+      logger.info('inside', { requestId: 'job-42' });
+    });
+    expect(getParsedMessages().map(([, msg]) => msg.requestId)).toEqual([
+      'job-42',
+      'job-42',
+    ]);
+  });
+
   it('should add only the request id without a trace', async () => {
     runWithRequestContext({ requestId: 'abc' }, () => {
       logger.info('msg');

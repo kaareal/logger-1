@@ -77,27 +77,12 @@ describe('parseTraceId', () => {
 });
 
 describe('createRequestContext', () => {
-  it('should use x-request-id when present', () => {
-    expect(
-      createRequestContext({
-        'x-request-id': 'abc',
-        traceparent: `00-${TRACE_ID}-00f067aa0ba902b7-01`,
-      }),
-    ).toEqual({
-      requestId: 'abc',
-      traceId: TRACE_ID,
+  it('should generate a request id and read the trace', () => {
+    const { requestId, traceId } = createRequestContext({
+      'x-request-id': 'client-supplied',
+      traceparent: `00-${TRACE_ID}-00f067aa0ba902b7-01`,
     });
-  });
-
-  it('should ignore an oversized or malformed x-request-id', () => {
-    for (const header of ['a'.repeat(129), 'has spaces', '']) {
-      const { requestId } = createRequestContext({ 'x-request-id': header });
-      expect(requestId).toMatch(/^[\da-f-]{36}$/);
-    }
-  });
-
-  it('should generate a request id', () => {
-    const { requestId } = createRequestContext({});
     expect(requestId).toMatch(/^[\da-f-]{36}$/);
+    expect(traceId).toBe(TRACE_ID);
   });
 });
