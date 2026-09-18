@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 /**
  * @typedef {Object} SpanContext
@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto';
 /**
  * @typedef {Object} RequestContext
  * @property {string} requestId
- * @property {string} [traceId] Trace of the incoming request, from its headers.
+ * @property {string} traceId From the request's trace headers, or generated.
  */
 
 const storage = new AsyncLocalStorage();
@@ -46,7 +46,8 @@ export function bindRequestContext(fn) {
 export function createRequestContext(headers) {
   return {
     requestId: randomUUID(),
-    traceId: parseTraceId(headers),
+    // Generated when no header arrives, e.g. behind an L4 load balancer.
+    traceId: parseTraceId(headers) || randomBytes(16).toString('hex'),
   };
 }
 

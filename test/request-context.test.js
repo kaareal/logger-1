@@ -85,4 +85,9 @@ describe('createRequestContext', () => {
     expect(requestId).toMatch(/^[\da-f-]{36}$/);
     expect(traceId).toBe(TRACE_ID);
   });
+
+  it('should generate a trace id without trace headers', () => {
+    const { traceId } = createRequestContext({});
+    expect(traceId).toMatch(/^[\da-f]{32}$/);
+  });
 });

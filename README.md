@@ -144,9 +144,10 @@ Cloud log written while handling it:
 
 - `requestId` - A UUID generated for each request.
 - `logging.googleapis.com/trace` - The trace id from the `traceparent` header,
-  falling back to `X-Cloud-Trace-Context` set by Google Cloud load balancers.
-  Logs Explorer groups logs of a request by it. Span ids in these headers
-  belong to the caller and are not logged.
+  falling back to `X-Cloud-Trace-Context` set by Google Cloud HTTP load
+  balancers. When neither arrives, for example behind a TCP load balancer, a
+  trace id is generated. Logs Explorer groups logs of a request by it. Span ids
+  in these headers belong to the caller and are not logged.
 
 Register the middleware before other middleware so their logs are included.
 `logger.getRequestContext()` returns the current context, or `undefined`

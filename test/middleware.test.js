@@ -196,6 +196,7 @@ describe('google cloud middleware', () => {
       message: 'POST /foo 2KB - 100ms',
       severity: 'INFO',
       requestId: expect.any(String),
+      'logging.googleapis.com/trace': expect.stringMatching(/^[\da-f]{32}$/),
       httpRequest: {
         latency: '0.1s',
         requestMethod: 'POST',
@@ -233,6 +234,7 @@ describe('google cloud middleware', () => {
       severity: 'INFO',
       userId: 'fake-id',
       requestId: expect.any(String),
+      'logging.googleapis.com/trace': expect.stringMatching(/^[\da-f]{32}$/),
       httpRequest: {
         latency: '0.1s',
         requestMethod: 'POST',
