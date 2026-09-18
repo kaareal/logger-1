@@ -29,10 +29,13 @@ application.
 
 ### Tracing
 
-The logger has no tracing dependency. An app that runs
-[OpenTelemetry](https://opentelemetry.io/) can link each log to the span that
-wrote it by passing the active span's context (its `traceId`, `spanId` and
-`traceFlags`):
+No setup is needed to group logs by request. The [middleware](#request-context)
+adds the trace id of the incoming request to every Google Cloud log written
+while handling it, and Logs Explorer shows logs with the same trace id
+together.
+
+If your app also runs [OpenTelemetry](https://opentelemetry.io/), pass the
+active span to the logger:
 
 ```js
 const { trace } = require('@opentelemetry/api');
@@ -41,9 +44,15 @@ logger.setupGoogleCloud({
 });
 ```
 
-Logs then carry `logging.googleapis.com/trace`, `spanId` and `trace_sampled`.
-When no span is active, or without `getSpanContext`, logs carry only the trace
-id of the incoming request, read by the [middleware](#request-context).
+This is required for logs to show up in Cloud Trace:
+
+- Logs use the span's trace id. Without it they use the trace id from the load
+  balancer's `X-Cloud-Trace-Context` header, which OpenTelemetry does not read
+  by default, so logs and spans end up in different traces.
+- Logs are attached to the span that wrote them (`spanId`) and marked as sampled
+  or not (`trace_sampled`).
+
+When no span is active, logs fall back to the request's trace id.
 
 ## Log Levels
 
