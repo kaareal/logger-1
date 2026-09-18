@@ -89,6 +89,13 @@ describe('createRequestContext', () => {
     });
   });
 
+  it('should ignore an oversized or malformed x-request-id', () => {
+    for (const header of ['a'.repeat(129), 'has spaces', '']) {
+      const { requestId } = createRequestContext({ 'x-request-id': header });
+      expect(requestId).toMatch(/^[\da-f-]{36}$/);
+    }
+  });
+
   it('should generate a request id', () => {
     const { requestId } = createRequestContext({});
     expect(requestId).toMatch(/^[\da-f-]{36}$/);
